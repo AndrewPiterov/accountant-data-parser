@@ -1,0 +1,23 @@
+{
+  "name": "accountants-data-parser",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "npx ts-node src/index.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "puppeteer": "^3.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^14.0.5",
+    "rimraf": "^3.0.2",
+    "tslint": "^6.1.2",
+    "typescript": "^3.9.3",
+    "@types/puppeteer": "^3.0.0"
+  }
+}
