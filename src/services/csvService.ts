@@ -1,4 +1,4 @@
-import { Accountant } from "./accountant.model"
+import { Accountant } from "../accountant.model"
 
 const fs = require('fs')
 
