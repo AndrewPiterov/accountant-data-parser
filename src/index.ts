@@ -1,4 +1,6 @@
 import puppeteer from 'puppeteer'
+import { Accountant } from "./accountant.model"
+import { CsvService } from './csvService'
 
 (async () => {
   console.log('Start...')
@@ -7,48 +9,59 @@ import puppeteer from 'puppeteer'
   const browser = await puppeteer.launch()
   const page = await browser.newPage()
 
-  for (let i = 1; i <= 10; i++) {
+  const csv = new CsvService()
+  csv.addHeader()
+
+  for (let i = 1; i <= 9000; i++) {
     const accountantUrl = `${BASE_URL}/${i}`
-
     console.log(`Start to process '${accountantUrl}'`)
-
     await page.goto(accountantUrl, { waitUntil: 'networkidle2' })
 
     const accountantData = await page.evaluate(() => {
-      const title = (document.querySelector('div[class="white-card display-flex"] > div > h1') as HTMLElement).innerText
+      try {
+        const title = (document.querySelector('div[class="white-card display-flex"] > div > h1') as HTMLElement).innerText
+        const arr = document.querySelectorAll('div[class="acct-card-contact"] p')
+        const email = (arr[0] as HTMLElement).innerText
+        const phone = (arr[1] as HTMLElement).innerText
+        const address = (arr[2] as HTMLElement).innerText // (document.querySelector('div[class="acct-card-contact"] p[class="text-bold"]') as HTMLElement).innerText
+        const qualifiedBy = (document.querySelector('div#qual-box > p') as HTMLElement).innerText
 
-      const arr = document.querySelectorAll('div[class="acct-card-contact"] p')
+        const specializingIn = []
+        document.querySelectorAll('div.card-service').forEach(x => {
+          specializingIn.push((x as HTMLElement).innerText)
+        })
 
-      const email = (arr[0] as HTMLElement).innerText
-      const phone = (arr[1] as HTMLElement).innerText
-      const address = (arr[2] as HTMLElement).innerText // (document.querySelector('div[class="acct-card-contact"] p[class="text-bold"]') as HTMLElement).innerText
-      const qualifiedBy = (document.querySelector('div#qual-box > p') as HTMLElement).innerText
+        const services = []
+        document.querySelectorAll('div.industry-service').forEach(x => {
+          services.push((x as HTMLElement).innerText)
+        })
 
-      const specializingIn = []
-      document.querySelectorAll('div.card-service').forEach(x => {
-        specializingIn.push((x as HTMLElement).innerText)
-      })
+        const acc: Accountant = {
+          firmName: title,
+          email,
+          phone,
+          address,
+          qualifiedIn: qualifiedBy,
+          specializingIn,
+          industryFocus: services
+        }
 
-      const services = []
-      document.querySelectorAll('div.industry-service').forEach(x => {
-        services.push((x as HTMLElement).innerText)
-      })
-
-      return {
-        title,
-        email,
-        phone,
-        address,
-        qualifiedBy,
-        specializingIn,
-        services
+        return acc
+      } catch (e) {
+        console.log(e)
+        return null
       }
     })
 
-    console.log(`${i}) acc`, accountantData)
+    if (!accountantData) {
+      console.log('BREAK')
+      break
+    }
+
+    // console.log(`${i}) acc`, accountantData)
+    csv.writeToFile(accountantData)
   }
 
   browser.close()
-
   console.log('Success!')
 })()

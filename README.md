@@ -8,7 +8,6 @@ These are the columns needed:
 - Contact info Email
 - Contact info phone
 - Contact info address
-
-Specializing in
-Qualified in
-Industry focus
+- Specializing in
+- Qualified in
+- Industry focus
