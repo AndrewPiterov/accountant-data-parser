@@ -16,11 +16,32 @@ import puppeteer from 'puppeteer'
 
     const accountantData = await page.evaluate(() => {
       const title = (document.querySelector('div[class="white-card display-flex"] > div > h1') as HTMLElement).innerText
-      const email = (document.querySelector('div[class="acct-card-contact"] p') as HTMLElement).innerText
+
+      const arr = document.querySelectorAll('div[class="acct-card-contact"] p')
+
+      const email = (arr[0] as HTMLElement).innerText
+      const phone = (arr[1] as HTMLElement).innerText
+      const address = (arr[2] as HTMLElement).innerText // (document.querySelector('div[class="acct-card-contact"] p[class="text-bold"]') as HTMLElement).innerText
+      const qualifiedBy = (document.querySelector('div#qual-box > p') as HTMLElement).innerText
+
+      const specializingIn = []
+      document.querySelectorAll('div.card-service').forEach(x => {
+        specializingIn.push((x as HTMLElement).innerText)
+      })
+
+      const services = []
+      document.querySelectorAll('div.industry-service').forEach(x => {
+        services.push((x as HTMLElement).innerText)
+      })
 
       return {
         title,
-        email
+        email,
+        phone,
+        address,
+        qualifiedBy,
+        specializingIn,
+        services
       }
     })
 
