@@ -58,7 +58,7 @@ export class BookKeepersService {
       }
 
       currentPage++
-      fetchMore = currentPage < 2 && customerLinks.length > 0
+      fetchMore = customerLinks.length > 0
     } while (fetchMore)
   }
 
