@@ -4,4 +4,7 @@ export class BookKeeperContactsModel {
   linkedIn?: string;
   emails?: string[];
   phones?: string[];
+  address?: string
+  website?: string
+  nonRecognized?: string[]
 }

@@ -11,7 +11,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "puppeteer": "^3.2.0"
+    "puppeteer": "^3.2.0",
+    "reflect-metadata": "^0.1.13",
+    "sqlite3": "^4.2.0",
+    "typeorm": "^0.2.25"
   },
   "devDependencies": {
     "@types/node": "^14.0.5",

@@ -1,4 +1,4 @@
-import { Accountant } from "../accountant.model"
+import { AccountantModel } from "../models"
 
 const fs = require('fs')
 
@@ -19,7 +19,7 @@ export class CsvService {
     addRow(header)
   }
 
-  public writeToFile = async (acc: Accountant): Promise<boolean> => {
+  public writeToFile = async (acc: AccountantModel): Promise<boolean> => {
     const row = `${acc.firmName};${acc.phone};${acc.email};${acc.address};${acc.specializingIn.join(',')};${acc.qualifiedIn};${acc.industryFocus.join(',')}`;
     addRow(row)
     return true

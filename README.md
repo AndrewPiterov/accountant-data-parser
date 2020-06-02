@@ -20,13 +20,13 @@ These are the columns needed:
 http://www.bookkeeperscentral.co.uk/service-types
 Required columns:
 
-Accountant Firm Name
-Address
-Phone
-Mobile
-Website
-Email
-Facebook
-Twitter
-LinkedIn
-Services offered
+- Accountant Firm Name
+- Address
+- Phone
+- Mobile
+- Website
+- Email
+- Facebook
+- Twitter
+- LinkedIn
+- Services offered

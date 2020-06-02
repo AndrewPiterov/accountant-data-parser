@@ -1,9 +1,18 @@
 import puppeteer from 'puppeteer'
-import { Accountant } from "./../accountant.model"
+// import { Accountant } from "../models/accountant.model"
 import { CsvService } from './csvService'
 import { BookKeeperContactsModel } from '../models/index'
+import { Connection } from 'typeorm'
+import { Accountant } from '../entities'
+import { extractContacts } from './funcs'
 
 export class BookKeepersService {
+
+  repo = this._conn.getRepository(Accountant)
+
+  constructor(private _conn: Connection) {
+
+  }
 
   parse = async (): Promise<boolean> => {
 
@@ -24,7 +33,9 @@ export class BookKeepersService {
 
   parseType = async (typeLink: string, page: puppeteer.Page): Promise<void> => {
     const url = typeLink
-    // http://www.bookkeeperscentral.co.uk/service-types/accountant/2
+
+    const typeName = typeLink.split('/').reverse()[0]
+
     console.log(`Start parse '${typeLink}'`)
     let fetchMore = true
     let currentPage = 1
@@ -43,6 +54,7 @@ export class BookKeepersService {
       for (let i = 0; i < customerLinks.length; i++) {
         const customerLink = customerLinks[i]
         await this.processCustomerPage(customerLink, page)
+        console.log(`${typeName}:${currentPage}:${i}) customer has been processed.`)
       }
 
       currentPage++
@@ -50,38 +62,21 @@ export class BookKeepersService {
     } while (fetchMore)
   }
 
-  private processCustomerPage = async (customerLink: string, page: puppeteer.Page) => {
+  private processCustomerPage = async (customerLink: string, page: puppeteer.Page): Promise<void> => {
+    console.log(`.... start parse customer '${customerLink}'`)
     await page.goto(customerLink, { waitUntil: 'networkidle2' })
+    const id = customerLink.split('/').reverse()[0]
+
+    if (await this.repo.findOne(id)) {
+      console.log('SHOULD SKIP')
+      return
+    }
 
     const customerData = await page.evaluate(() => {
+      const name = (document.querySelector('div.tr-list-info h4') as HTMLElement).innerText
       const contacts = document.querySelectorAll('ul.extra-service > li> div > div.icon-box-text')
       const arr: string[] = []
       contacts.forEach(x => arr.push((x as any).innerText))
-
-      // /^(?=.*\d)[\d ]+$/
-      // const contactObj = new BookKeeperContactsModel()
-      // for (const c of arr) {
-      //   if (c.indexOf('facebook') > -1) {
-      //     contactObj.facebook = c
-      //     continue
-      //   }
-
-      //   if (c.indexOf('twitter') > -1) {
-      //     contactObj.twitter = c
-      //     continue
-      //   }
-
-      //   if (c.indexOf('linkedin') > -1) {
-      //     contactObj.linkedIn = c
-      //     continue
-      //   }
-
-      //   // TODO: try get name
-      //   // TODO: try get phones
-      //   // TODO: try get emails
-      //   // TODO: try get other links
-      // }
-
       const descriptionArray = document.querySelectorAll('div.block-body > p')
       const darr = []
       descriptionArray.forEach(x => {
@@ -98,8 +93,35 @@ export class BookKeepersService {
         }
       })
 
-      return { contacts: arr, desc: darr.join(','), services }
+      return {
+        name,
+        contacts: arr,
+        services,
+        desc: darr.join(',')
+      }
     })
+
+    if (customerData) {
+
+      const contacts: BookKeeperContactsModel = extractContacts(customerData.contacts)
+
+      const entity: Accountant = {
+        id,
+        companyName: customerData.name,
+        phone: contacts.phones.join(','),
+        email: contacts.emails.join(','),
+        address: contacts.address,
+        facebook: contacts.facebook,
+        twitter: contacts.twitter,
+        linkedIn: contacts.linkedIn,
+        website: contacts.website,
+        services: customerData.services.join(','),
+        about: customerData.desc,
+        more: contacts.nonRecognized.join(',')
+      }
+
+      await this.repo.save(entity)
+    }
 
     console.log(`customer data`, customerData)
   }

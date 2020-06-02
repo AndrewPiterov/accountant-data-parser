@@ -1,5 +1,5 @@
 import puppeteer from 'puppeteer'
-import { Accountant } from "./../accountant.model"
+import { AccountantModel } from "../models"
 import { CsvService } from './csvService'
 
 export class AccountantService {
@@ -23,7 +23,7 @@ export class AccountantService {
         const arr = document.querySelectorAll('div[class="acct-card-contact"] p')
         const email = (arr[0] as HTMLElement)
         const phone = (arr[1] as HTMLElement)
-        const address = (arr[2] as HTMLElement) // (document.querySelector('div[class="acct-card-contact"] p[class="text-bold"]') as HTMLElement).innerText
+        const address = (arr[2] as HTMLElement)
         const qualifiedBy = (document.querySelector('div#qual-box > p') as HTMLElement)
 
         const specializingIn = []
@@ -40,7 +40,7 @@ export class AccountantService {
           }
         })
 
-        const acc: Accountant = {
+        const acc: AccountantModel = {
           firmName: title ? title.innerText : '',
           email: email ? email.innerText : '',
           phone: phone ? phone.innerText : '',
