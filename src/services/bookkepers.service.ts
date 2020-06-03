@@ -6,6 +6,12 @@ import { Connection } from 'typeorm'
 import { Accountant } from '../entities'
 import { extractContacts } from './funcs'
 
+
+interface ParseOptions {
+  skipTypes: string[]
+  perType: any[]
+}
+
 export class BookKeepersService {
 
   repo = this._conn.getRepository(Accountant)
@@ -21,30 +27,43 @@ export class BookKeepersService {
 
     // Get types
     const typeLinks = await this._getTypeLinks(page)
-    console.log('Links', typeLinks)
+    console.log('LINKS', typeLinks)
 
-    for (const type of typeLinks) {
-      await this.parseType(type, page)
+    const opt: ParseOptions = {
+      skipTypes: ['accountant', 'advice', 'assessment'],
+      perType: [{ type: 'audit', fromPage: 34 }]
+    }
+
+    for (const typeLink of typeLinks) {
+      const typeName = typeLink.split('/').reverse()[0]
+      if (opt.skipTypes.includes(typeName)) {
+        console.log(`TYPE '${typeLink} will be skipped!'`)
+        continue
+      }
+
+      const typeParseOption = opt.perType.find(x => x.type === typeName)
+      await this.parseType(typeName, typeParseOption, page)
     }
 
     browser.close()
     return true
   }
 
-  parseType = async (typeLink: string, page: puppeteer.Page): Promise<void> => {
-    const url = typeLink
-
-    const typeName = typeLink.split('/').reverse()[0]
-
-    console.log(`Start parse '${typeLink}'`)
+  parseType = async (typeName: string, parseOption: any, puppeteerPage: puppeteer.Page): Promise<void> => {
+    const url = `http://www.bookkeeperscentral.co.uk/service-types/${typeName}`
+    console.log(`Start parse type '${typeName}'`)
     let fetchMore = true
-    let currentPage = 1
+
+    parseOption = parseOption ? parseOption : {}
+    let currentPage = parseOption.fromPage ? parseOption.fromPage : 1
+    // console.log(`START PARSE FROM ${currentPage}`, parseOption)
 
     do {
       const pageUrl = `${url}/${currentPage}`
-      await page.goto(pageUrl, { waitUntil: 'networkidle2' })
+      await puppeteerPage.goto(pageUrl, { waitUntil: 'networkidle2' })
       console.log(`..parse page '${pageUrl}'`)
-      const customerLinks = await page.evaluate(() => {
+
+      const customerLinks = await puppeteerPage.evaluate(() => {
         const ahrefArray = document.querySelectorAll('h3.captlize > a')
         const links = []
         ahrefArray.forEach(x => links.push((x as any).href))
@@ -53,7 +72,7 @@ export class BookKeepersService {
 
       for (let i = 0; i < customerLinks.length; i++) {
         const customerLink = customerLinks[i]
-        await this.processCustomerPage(customerLink, page)
+        await this.processCustomerPage(customerLink, puppeteerPage)
         console.log(`${typeName}:${currentPage}:${i}) customer has been processed.`)
       }
 
@@ -73,23 +92,30 @@ export class BookKeepersService {
     }
 
     const customerData = await page.evaluate(() => {
-      const name = (document.querySelector('div.tr-list-info h4') as HTMLElement).innerText
+      const name = (document.querySelector('div.tr-list-info h4') as HTMLElement) ? (document.querySelector('div.tr-list-info h4') as HTMLElement).innerText : '-'
       const contacts = document.querySelectorAll('ul.extra-service > li> div > div.icon-box-text')
       const arr: string[] = []
-      contacts.forEach(x => arr.push((x as any).innerText))
+      contacts.forEach(x => {
+        const v = (x as any)
+        if (v && v.innerText) {
+          arr.push(v.innerText)
+        }
+      })
       const descriptionArray = document.querySelectorAll('div.block-body > p')
       const darr = []
       descriptionArray.forEach(x => {
-        if ((x as HTMLElement).innerText) {
-          darr.push((x as HTMLElement).innerText)
+        const v = (x as HTMLElement)
+        if (v && v.innerText) {
+          darr.push(v.innerText)
         }
       })
 
       const servicesElement = document.querySelectorAll('ul.avl-features.third > li > a')
       const services = []
       servicesElement.forEach(x => {
-        if ((x as HTMLElement).innerText) {
-          services.push((x as HTMLElement).innerText)
+        const v = (x as HTMLElement)
+        if (v && v.innerText) {
+          services.push(v.innerText)
         }
       })
 
@@ -138,5 +164,4 @@ export class BookKeepersService {
       return links
     })
   }
-
 }
