@@ -37,7 +37,7 @@ export class BookKeepersService {
         'estate',
         'filing',
       ],
-      perType: [{ type: 'formation', fromPage: 130 }]
+      perType: [{ type: 'formation', fromPage: 141 }]
     }
 
     try {
