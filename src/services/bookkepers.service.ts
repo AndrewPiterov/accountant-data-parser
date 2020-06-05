@@ -30,22 +30,34 @@ export class BookKeepersService {
     console.log('LINKS', typeLinks)
 
     const opt: ParseOptions = {
-      skipTypes: ['accountant', 'advice', 'assessment'],
-      perType: [{ type: 'audit', fromPage: 34 }]
+      skipTypes: [
+        'accountant', 'advice', 'assessment', 'audit',
+        'bookkeeping',
+        'certified', 'charity', 'chartered', 'commercial', 'compliance', 'construction', 'consultant', 'contractor', 'corporate',
+        'estate',
+        'filing',
+      ],
+      perType: [{ type: 'formation', fromPage: 130 }]
     }
 
-    for (const typeLink of typeLinks) {
-      const typeName = typeLink.split('/').reverse()[0]
-      if (opt.skipTypes.includes(typeName)) {
-        console.log(`TYPE '${typeLink} will be skipped!'`)
-        continue
+    try {
+
+      for (const typeLink of typeLinks) {
+        const typeName = typeLink.split('/').reverse()[0]
+        if (opt.skipTypes.includes(typeName)) {
+          console.log(`TYPE '${typeLink} will be skipped!'`)
+          continue
+        }
+        const typeParseOption = opt.perType.find(x => x.type === typeName)
+        await this.parseType(typeName, typeParseOption, page)
       }
-
-      const typeParseOption = opt.perType.find(x => x.type === typeName)
-      await this.parseType(typeName, typeParseOption, page)
+    } catch (error) {
+      console.log(`ERROR`, error)
+      return false
+    } finally {
+      browser.close()
     }
 
-    browser.close()
     return true
   }
 
