@@ -1,4 +1,4 @@
-import { BookKeepersService } from './services'
+import { BookKeepersService, CsvService } from './services'
 import "reflect-metadata"
 import { createConnection, ConnectionOptions, Repository } from "typeorm"
 import { root } from './path'
@@ -18,8 +18,8 @@ import { Accountant } from './entities'
 
     console.log('Start...')
 
-    const service = new BookKeepersService(connection)
-    await service.parse()
+    const service = new BookKeepersService(connection, new CsvService('./output/bookkeepers.csv'))
+    await service.createCsv()
 
     console.log('Success!')
 

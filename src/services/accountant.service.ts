@@ -9,7 +9,7 @@ export class AccountantService {
     const browser = await puppeteer.launch()
     const page = await browser.newPage()
 
-    const csv = new CsvService()
+    const csv = null // TODO: new CsvService()
     csv.addHeader()
 
     for (let i = 1337; i <= 9000; i++) {
@@ -63,7 +63,7 @@ export class AccountantService {
       }
 
       // console.log(`${i}) acc`, accountantData)
-      csv.writeToFile(accountantData)
+      // TODO: csv.writeToFile(accountantData)
     }
 
     browser.close()

@@ -5,7 +5,16 @@ import { BookKeeperContactsModel } from '../models/index'
 import { Connection } from 'typeorm'
 import { Accountant } from '../entities'
 import { extractContacts } from './funcs'
+import colors from 'colors'
 
+
+colors.setTheme({
+  info: 'bgGreen',
+  help: 'cyan',
+  warn: 'yellow',
+  success: 'bgBlue',
+  error: 'red'
+})
 
 interface ParseOptions {
   skipTypes: string[]
@@ -16,11 +25,13 @@ export class BookKeepersService {
 
   repo = this._conn.getRepository(Accountant)
 
-  constructor(private _conn: Connection) {
+  constructor(private _conn: Connection, private readonly _csvService: CsvService) {
 
   }
 
   parse = async (): Promise<boolean> => {
+
+    return
 
     const browser = await puppeteer.launch({ args: ['--no-sandbox'] })
     const page = await browser.newPage()
@@ -36,12 +47,12 @@ export class BookKeepersService {
         'certified', 'charity', 'chartered', 'commercial', 'compliance', 'construction', 'consultant', 'contractor', 'corporate',
         'estate',
         'filing',
+        'formation', 'freelance', 'inheritance', 'insolvency', 'insurance'
       ],
-      perType: [{ type: 'formation', fromPage: 141 }]
+      perType: [{ type: 'invoicing', fromPage: 36 }]
     }
 
     try {
-
       for (const typeLink of typeLinks) {
         const typeName = typeLink.split('/').reverse()[0]
         if (opt.skipTypes.includes(typeName)) {
@@ -49,7 +60,7 @@ export class BookKeepersService {
           continue
         }
         const typeParseOption = opt.perType.find(x => x.type === typeName)
-        await this.parseType(typeName, typeParseOption, page)
+        await this._parseType(typeName, typeParseOption, page)
       }
     } catch (error) {
       console.log(`ERROR`, error)
@@ -61,7 +72,16 @@ export class BookKeepersService {
     return true
   }
 
-  parseType = async (typeName: string, parseOption: any, puppeteerPage: puppeteer.Page): Promise<void> => {
+  public createCsv = async (): Promise<void> => {
+    this._csvService.addRow('FirmName;Address;Phone;Email;WebSite;Facebook;Twitter;LinkedIn;ServicesOffered')
+    const list = await this.repo.find()
+    for (const acc of list) {
+      this._csvService.addRow(`${acc.companyName ?? ''};${acc.address ?? ''};${acc.phone ?? ''};${acc.email ?? ''};${acc.website ?? ''};${acc.facebook ?? ''};${acc.twitter ?? ''};${acc.linkedIn ?? ''};${acc.services ?? ''}`)
+    }
+    console.log('CSV file has been saved.'.bgBlue)
+  }
+
+  private _parseType = async (typeName: string, parseOption: any, puppeteerPage: puppeteer.Page): Promise<void> => {
     const url = `http://www.bookkeeperscentral.co.uk/service-types/${typeName}`
     console.log(`Start parse type '${typeName}'`)
     let fetchMore = true
@@ -84,7 +104,7 @@ export class BookKeepersService {
 
       for (let i = 0; i < customerLinks.length; i++) {
         const customerLink = customerLinks[i]
-        await this.processCustomerPage(customerLink, puppeteerPage)
+        await this._processCustomerPage(customerLink, puppeteerPage)
         console.log(`${typeName}:${currentPage}:${i}) customer has been processed.`)
       }
 
@@ -93,7 +113,7 @@ export class BookKeepersService {
     } while (fetchMore)
   }
 
-  private processCustomerPage = async (customerLink: string, page: puppeteer.Page): Promise<void> => {
+  private _processCustomerPage = async (customerLink: string, page: puppeteer.Page): Promise<void> => {
     console.log(`.... start parse customer '${customerLink}'`)
     await page.goto(customerLink, { waitUntil: 'networkidle2' })
     const id = customerLink.split('/').reverse()[0]
