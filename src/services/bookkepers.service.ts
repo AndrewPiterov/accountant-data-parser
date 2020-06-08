@@ -73,10 +73,12 @@ export class BookKeepersService {
   }
 
   public createCsv = async (): Promise<void> => {
-    this._csvService.addRow('FirmName;Address;Phone;Email;WebSite;Facebook;Twitter;LinkedIn;ServicesOffered')
+    this._csvService.addRow('FirmName;Address;Phone;Email;WebSite;Facebook;Twitter;LinkedIn;ServicesOffered;Description;Additional')
     const list = await this.repo.find()
     for (const acc of list) {
-      this._csvService.addRow(`${acc.companyName ?? ''};${acc.address ?? ''};${acc.phone ?? ''};${acc.email ?? ''};${acc.website ?? ''};${acc.facebook ?? ''};${acc.twitter ?? ''};${acc.linkedIn ?? ''};${acc.services ?? ''}`)
+      const about = (acc.about ?? '').replace(/\;/gi, '.').replace(/(\r\n|\n|\r)/gm, ' ')
+      const more = (acc.more ?? '').replace(/\;/gi, '.').replace(/(\r\n|\n|\r)/gm, ' ')
+      this._csvService.addRow(`${acc.companyName ?? ''};${acc.address ?? ''};${acc.phone ?? ''};${acc.email ?? ''};${acc.website ?? ''};${acc.facebook ?? ''};${acc.twitter ?? ''};${acc.linkedIn ?? ''};${acc.services ?? ''};${about};${more}`)
     }
     console.log('CSV file has been saved.'.bgBlue)
   }
